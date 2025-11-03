@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kps-pod-cpu-high
+  namespace: monitoring
+  labels:
+    release: kps
+spec:
+  groups:
+    - name: pod-cpu-usage
+      rules:
+        - alert: PodCPUHigh
+          # Pod CPU usage > 80% (dựa trên request). Nếu Pod không set requests, dùng node capacity sẽ không chính xác.
+          expr: |
+            sum by (namespace,pod) (
+              rate(container_cpu_usage_seconds_total{image!=""}[1m])
+            )
+            /
+            sum by (namespace,pod) (
+              kube_pod_container_resource_requests{resource="cpu", unit="core"}
+            ) > 0.8
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CPU cao ở pod {{ $labels.pod }}"
+            description: "CPU usage trên 80% > 1m (ns={{ $labels.namespace }}, pod={{ $labels.pod }})"

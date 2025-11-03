@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kps-alertmanager
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    app.kubernetes.io/component: alertmanager
+type: Opaque
+stringData:
+  alertmanager.yaml: |
+    route:
+      receiver: default
+      group_by: [alertname, namespace, pod]
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      routes:
+        - matchers:
+            - severity="warning"
+          receiver: default
+
+    receivers:
+      - name: default
+        email_configs:
+          - to: "powerhung1@gmail.com"
+            from: "powerhung1@gmail.com"
+            smarthost: "smtp.gmail.com:587"
+            auth_username: "powerhung1@gmail.com"
+            auth_password: "APP_PASSWORD"
+            require_tls: true
+        slack_configs:
+          - api_url: "https://hooks.slack.com/services/TOKEN1/TOKEN2/TOKEN3"
+            channel: "#alerts"
+            send_resolved: true
+        webhook_configs:
+          - url: "http://your-server-domain:8080/alerts"
+            send_resolved: true
+
